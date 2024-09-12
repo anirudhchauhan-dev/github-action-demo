@@ -1,0 +1,36 @@
+name: Deploy NestJS Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: SSH and deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_EC2_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /code/test/github-action-demo  # Navigate to project directory
+            git pull origin main        # Pull latest code from GitHub
+            npm install --force                # Install new dependencies
+            npm run build               # Build the application
+            pm2 stop all         # Stop the current app
+            pm2 start'npm run start:prod' --name=test_nest.js # Start the app using PM2
+
+
+            
