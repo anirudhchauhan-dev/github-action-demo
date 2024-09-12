@@ -27,14 +27,15 @@ jobs:
           script: |
             cd code/test/github-action-demo  # Navigate to project directory
             git pull origin main              # Pull latest code from GitHub
-            
+
             # Ensure nvm is available in the session
             export NVM_DIR="$HOME/.nvm"      
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Load nvm
-            
+
             nvm use 18                        # Switch to Node.js version 18
             npm install --force               # Install new dependencies
             npm run build                     # Build the application
-            
+
             sudo pm2 stop all                 # Stop the current app
             sudo pm2 start 'npm run start:prod' --name=test_nest.js # Start the app using PM2
+            sudo pm2 save                    # Save PM2 process list
