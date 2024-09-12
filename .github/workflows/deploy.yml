@@ -27,10 +27,8 @@ jobs:
           script: |
             cd code/test/github-action-demo  # Navigate to project directory
             git pull origin main        # Pull latest code from GitHub
-            npm install --force                # Install new dependencies
+            nvm use 18                  #install node 18 
+            npm install --force         # Install new dependencies
             npm run build               # Build the application
             pm2 stop all         # Stop the current app
-            pm2 start'npm run start:prod' --name=test_nest.js # Start the app using PM2
-
-
-            
+            pm2 start 'npm run start:prod' --name=test_nest.js # Start the app using PM2
