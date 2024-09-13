@@ -51,6 +51,7 @@ jobs:
 
             nvm install 18
             nvm use 18  # Use node version 18
+            node -v
             npm install --force  # Install new dependencies
 
             # Remove existing build, build the app, and restart with PM2
