@@ -1,4 +1,4 @@
-name: Deploy NestJS Application
+name: Backend Deployment
 
 on:
   push:
@@ -25,18 +25,55 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd code/test/github-action-demo  # Navigate to project directory
-            git pull origin main              # Pull latest code from GitHub
+            set -e  # Exit on any failure
+
+            # Define variables
+            PROJECT_DIR="code/test/github-action-demo"
+            BACKUP_DIR="/home/ubuntu/test-backup"
+            TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')  # Add timestamp to identify backups
+            LATEST_BACKUP="${BACKUP_DIR}/test_backup_${TIMESTAMP}"
+
+            # Create backup of current deployment
+            echo "Creating backup of current deployment..."
+            sudo rm -rf ${BACKUP_DIR}/*  # Remove old backups
+            sudo mkdir -p ${LATEST_BACKUP}  # Create a new backup directory
+            sudo cp -r ${PROJECT_DIR}/dist ${LATEST_BACKUP}/  # Copy the entire dist folder to backup
+            echo "Backup created at ${LATEST_BACKUP}"
+
+            # Navigate to the project directory and update the code
+            echo "Deploying the latest code..."
+            cd ${PROJECT_DIR}
+            git pull  # Pull latest code from GitHub
 
             # Ensure nvm is available in the session
-            export NVM_DIR="$HOME/.nvm"      
+            export NVM_DIR="$HOME/.nvm"                       
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Load nvm
 
             nvm install 18
-            nvm use 18                        # Switch to Node.js version 18
-            npm install --force               # Install new dependencies
-            npm run build                     # Build the application
+            nvm use 18  # Use node version 18
+            npm install --force  # Install new dependencies
 
-            pm2 stop all                       # Stop the current app
-            pm2 start 'npm run start:prod' --name=test_nest1.js # Start the app using PM2
-            pm2 save                    # Save PM2 process list
+            # Remove existing build, build the app, and restart with PM2
+            cd ${PROJECT_DIR}/dist
+            sudo rm -rf *  # Remove old build
+            cd ..
+            npm run build  # Build the application
+            pm2 stop all  # Stop the current app
+            pm2 start 'npm run start:prod' --name=test_app.dev  # Start the app using PM2
+
+      # On failure rollback to backup
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_EC2_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Deployment failed, rolling back..."
+            sudo rm -rf ${PROJECT_DIR}/dist/*  # Remove failed deployment files
+            sudo mkdir -p ${PROJECT_DIR}/dist  # Ensure dist folder exists
+            sudo cp -r ${LATEST_BACKUP}/dist/* ${PROJECT_DIR}/dist/  # Restore backup
+            pm2 stop all  # Stop the app
+            pm2 start 'npm run start:prod' --name=test_app.dev  # Start the app using PM2
+            echo "Rollback to previous backup completed."
