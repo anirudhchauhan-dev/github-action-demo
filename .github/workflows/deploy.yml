@@ -55,7 +55,7 @@ jobs:
             npm install --force  # Install new dependencies
 
             # Remove existing build, build the app, and restart with PM2
-            cd ${PROJECT_DIR}/dist
+            cd dist
             sudo rm -rf *  # Remove old build
             cd ..
             npm run build  # Build the application
@@ -74,7 +74,8 @@ jobs:
             echo "Deployment failed, rolling back..."
             sudo rm -rf ${PROJECT_DIR}/dist/*  # Remove failed deployment files
             sudo mkdir -p ${PROJECT_DIR}/dist  # Ensure dist folder exists
-            sudo cp -r ${LATEST_BACKUP}/dist/* ${PROJECT_DIR}/dist/  # Restore backup
+            sudo cp -r ${LATEST_BACKUP}/dist/ ${PROJECT_DIR}/dist/  # Restore backup
             pm2 stop all  # Stop the app
             pm2 start 'npm run start:prod' --name=test_app.dev  # Start the app using PM2
             echo "Rollback to previous backup completed."
+
