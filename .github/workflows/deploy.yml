@@ -13,11 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: 18
-
       - name: SSH and deploy to EC2
         uses: appleboy/ssh-action@master
         with:
@@ -59,7 +54,7 @@ jobs:
             sudo rm -rf *  # Remove old build
             cd ..
             npm run build  # Build the application
-            pm2 stop all  # Stop the current app
+            pm2 stop test_app.dev  # Stop the current app
             pm2 start 'npm run start:prod' --name=test_app.dev  # Start the app using PM2
 
       # On failure rollback to backup
@@ -75,7 +70,7 @@ jobs:
             sudo rm -rf ${PROJECT_DIR}/dist/*  # Remove failed deployment files
             sudo mkdir -p ${PROJECT_DIR}/dist  # Ensure dist folder exists
             sudo cp -r ${LATEST_BACKUP}/dist/ ${PROJECT_DIR}/dist/  # Restore backup
-            pm2 stop all  # Stop the app
+            pm2 stop test_app.dev  # Stop the app
             pm2 start 'npm run start:prod' --name=test_app.dev  # Start the app using PM2
             echo "Rollback to previous backup completed."
 
