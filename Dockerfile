@@ -34,4 +34,4 @@ COPY package*.json ./
 EXPOSE 3000
 
 # Start the application with PM2
-CMD ["pm2-runtime", "start", "npm", "--name", "gapmap.dev", "--", "run", "start:prod"]
+CMD ["pm2-runtime", "start", "npm", "--name", "test_app.dev", "--", "run", "start:prod"]
