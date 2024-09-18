@@ -22,6 +22,9 @@ FROM node:18-alpine
 # Set the working directory for the production image
 WORKDIR /app
 
+# Install PM2 globally
+RUN npm install pm2 -g
+
 # Copy the built application from the build stage
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
@@ -30,5 +33,5 @@ COPY package*.json ./
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "run", "start:prod"]
+# Start the application with PM2
+CMD ["pm2-runtime", "start", "npm", "--name", "gapmap.dev", "--", "run", "start:prod"]
