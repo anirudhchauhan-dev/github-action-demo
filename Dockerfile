@@ -1,8 +1,11 @@
 # Stage 1: Build the application
-FROM node:18-alpine AS build
+# Parameterize Node.js version
+ARG NODE_VERSION=18-alpine
+FROM node:${NODE_VERSION} AS build
 
 # Set the working directory inside the container
-WORKDIR /app
+ARG WORKDIR=/app
+WORKDIR ${WORKDIR}
 
 # Copy package.json and package-lock.json to install dependencies
 COPY package*.json ./
@@ -17,21 +20,24 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production image
-FROM node:18-alpine
+FROM node:${NODE_VERSION}
 
 # Set the working directory for the production image
-WORKDIR /app
+WORKDIR ${WORKDIR}
 
 # Install PM2 globally
-RUN npm install pm2 -g
+ARG PM2_VERSION=latest
+RUN npm install pm2@${PM2_VERSION} -g
 
 # Copy the built application from the build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=build ${WORKDIR}/dist ./dist
+COPY --from=build ${WORKDIR}/node_modules ./node_modules
 COPY package*.json ./
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Expose the port the app runs on (parameterize the port)
+ARG APP_PORT=3000
+EXPOSE ${APP_PORT}
 
-# Start the application with PM2
-CMD ["pm2-runtime", "start", "npm", "--name", "test_app.dev", "--", "run", "start:prod"]
+# Parameterize the app name and start command
+ARG APP_NAME=test_app.dev
+CMD ["pm2-runtime", "start", "npm", "--name", "${APP_NAME}", "--", "run", "start:prod"]
