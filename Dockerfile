@@ -23,15 +23,15 @@ RUN npm run build
 FROM node:${NODE_VERSION}
 
 # Set the working directory for the production image
-WORKDIR ${WORKDIR}
+WORKDIR /app
 
 # Install PM2 globally
 ARG PM2_VERSION=latest
 RUN npm install pm2@${PM2_VERSION} -g
 
 # Copy the built application from the build stage
-COPY --from=build ${WORKDIR}/dist ./dist
-COPY --from=build ${WORKDIR}/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
 COPY package*.json ./
 
 # Expose the port the app runs on (parameterize the port)
