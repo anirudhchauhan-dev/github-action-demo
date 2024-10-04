@@ -15,8 +15,7 @@ RUN npm install --force
 COPY . .
 
 # Copy the appropriate .env file based on the build environment
-ARG ENV_FILE=.env
-COPY ${ENV_FILE} .env  # Ensure the correct .env file is copied to .env
+COPY .env .env  # Ensure the correct .env file is copied to .env
 
 # Build the Nest.js application
 RUN npm run build
@@ -35,7 +34,7 @@ RUN npm install pm2@${PM2_VERSION} -g
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY package*.json ./
-COPY .env .env  # Ensure the selected .env is copied
+COPY .env .env
 
 # Expose the port the app runs on
 ARG APP_PORT=3000
