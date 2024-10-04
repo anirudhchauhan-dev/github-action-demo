@@ -16,6 +16,7 @@ COPY . .
 
 COPY .env .env
 
+RUN ls -la
 
 # Build the Nest.js application
 RUN npm run build
@@ -35,6 +36,8 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY package*.json ./
 COPY .env .env
+
+RUN ls -la
 
 
 # Expose the port the app runs on
