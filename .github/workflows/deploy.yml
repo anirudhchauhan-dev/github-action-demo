@@ -36,13 +36,13 @@ jobs:
       - name: Build and Push Docker image
         run: |
           # Build the images
-          docker-compose -f ../docker-compose.yml build
+          docker compose -f ../docker-compose.yml build
 
           # Tagging the image with latest and specific version
           docker tag ${DOCKER_USERNAME}/nestjs-app:latest ${DOCKER_USERNAME}/nestjs-app:${{ env.VERSION }}
           
           # Push the images to Docker Hub
-          docker-compose -f ../docker-compose.yml push
+          docker compose -f ../docker-compose.yml push
           docker push ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
           docker push ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
 
@@ -58,13 +58,13 @@ jobs:
 
             # Pull the latest Docker images from Docker Hub
             echo "Deploying Docker image with version ${{ env.VERSION }}..."
-            sudo docker-compose -f ../docker-compose.yml pull
+            sudo docker compose -f ../docker-compose.yml pull
 
             # Stop and remove any existing containers
-            sudo docker-compose -f ../docker-compose.yml down || true
+            sudo docker compose -f ../docker-compose.yml down || true
 
             # Start the application with Docker Compose
-            sudo docker-compose -f ../docker-compose.yml up -d
+            sudo docker compose -f ../docker-compose.yml up -d
             echo "Deployment complete."
 
       # Step 7: Rollback on failure
@@ -77,9 +77,9 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "Deployment failed, rolling back to previous version..."
-            sudo docker-compose -f ../docker-compose.yml down || true
+            sudo docker compose -f ../docker-compose.yml down || true
             
             # Assuming the last working version is tagged as 'latest'
-            sudo docker-compose -f ../docker-compose.yml pull
-            sudo docker-compose -f ../docker-compose.yml up -d
+            sudo docker compose -f ../docker-compose.yml pull
+            sudo docker compose -f ../docker-compose.yml up -d
             echo "Rollback complete."
