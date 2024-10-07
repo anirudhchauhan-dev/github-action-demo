@@ -6,16 +6,15 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NODE_VERSION: 18-alpine # Build argument for the Node version
+        NODE_VERSION: 18-alpine  # Build argument for the Node version
         PM2_VERSION: latest      # Build argument for the PM2 version
     environment:
       NODE_ENV: production
-      APP_NAME: test_app.dev   # Application name
+      APP_NAME: test_app.dev     # Application name
     ports:
-      - "3000:3000"            # Expose the application port
+      - "3000:3000"              # Expose the application port
     volumes:
-      - .:/app                 # Mount the current directory to /app in the container
+      - .:/app                   # Mount the current directory to /app in the container
     env_file:
-      - .env                   # Load environment variables from the .env file
-    image: "${{ secrets.DOCKER_USERNAME }}/nestjs-app:${VERSION}" # Tagging with version
-
+      - .env                     # Load environment variables from the .env file
+    image: "${DOCKER_USERNAME}/nestjs-app:${VERSION}" # Use dynamic versioning from CI/CD

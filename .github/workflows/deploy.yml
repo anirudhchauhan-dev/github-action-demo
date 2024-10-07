@@ -35,9 +35,8 @@ jobs:
       # Step 5: Build and Push Docker image using Docker Compose
       - name: Build and Push Docker image
         run: |
-          docker-compose build
-          docker tag "${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest" "${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}"
-          docker-compose push
+          VERSION=${VERSION } docker-compose build
+          VERSION=${VERSION } docker-compose push
 
       # Step 6: SSH into EC2 instance and deploy using Docker Compose
       - name: SSH and deploy Docker Compose to EC2
@@ -48,12 +47,12 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e  # Exit on any failure
-
+            
             # Pull the latest images from Docker Hub
-            docker-compose pull
+            VERSION=${ VERSION } docker-compose pull
 
             # Start the application with Docker Compose
-            docker-compose up -d --remove-orphans
+            VERSION=${ env.VERSION } docker-compose up -d --remove-orphans
 
       # Step 7: Rollback on failure
       - name: Rollback on failure
@@ -64,7 +63,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Deployment  failed, rolling back to previous version..."
+            echo "Deployment failed, rolling back to previous version..."
 
             # Stop and remove the current failed container
             docker-compose down
