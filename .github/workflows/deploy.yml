@@ -35,8 +35,17 @@ jobs:
       # Step 5: Build and Push Docker image using Docker Compose
       - name: Build and Push Docker image
         run: |
-          VERSION=${VERSION } docker-compose build
-          VERSION=${VERSION } docker-compose push
+          # Set the VERSION environment variable for the build
+          export VERSION=${{ env.VERSION }}
+
+          # Build the Docker image
+          sudo docker-compose build --pull
+
+          # Tag the Docker image with the version
+          sudo docker tag "${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest" "${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}"
+
+          # Push the Docker image to Docker Hub
+          sudo docker push "${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}"
 
       # Step 6: SSH into EC2 instance and deploy using Docker Compose
       - name: SSH and deploy Docker Compose to EC2
@@ -47,12 +56,12 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e  # Exit on any failure
-            
+
             # Pull the latest images from Docker Hub
-            VERSION=${ VERSION } docker-compose pull
+            VERSION=${{ env.VERSION }} sudo docker-compose pull
 
             # Start the application with Docker Compose
-            VERSION=${ env.VERSION } docker-compose up -d --remove-orphans
+            VERSION=${{ env.VERSION }} sudo docker-compose up -d --remove-orphans
 
       # Step 7: Rollback on failure
       - name: Rollback on failure
@@ -66,12 +75,12 @@ jobs:
             echo "Deployment failed, rolling back to previous version..."
 
             # Stop and remove the current failed container
-            docker-compose down
+            sudo docker-compose down
 
             # Pull the previous Docker image (tagged as 'latest')
-            docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
 
             # Replace the current version with 'latest' and redeploy
-            docker-compose up -d --build --remove-orphans
+            sudo docker-compose up -d --build --remove-orphans
 
             echo "Rollback complete."
