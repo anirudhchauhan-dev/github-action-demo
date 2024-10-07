@@ -6,5 +6,6 @@ async function bootstrap() {
   await app.listen(process.env.PORT);
   console.log('Hellooooooooooooo!!!!');
   console.log(parseInt(process.env.PORT));
+  console.log(process.env.DB_NAME);
 }
 bootstrap();
