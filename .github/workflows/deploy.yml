@@ -39,7 +39,7 @@ jobs:
           docker compose -f ./docker-compose.yml build
 
           # Tagging the image with latest and specific version
-          docker tag ${DOCKER_USERNAME}/nestjs-app:latest ${DOCKER_USERNAME}/nestjs-app:${{ env.VERSION }}
+          docker tag ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
           
           # Push the images to Docker Hub
           docker compose -f ./docker-compose.yml push
