@@ -54,20 +54,6 @@ jobs:
           script: |
             set -e  # Exit on any failure
 
-            # Create a temporary .env file
-            echo "Setting up environment variables..."
-            cat /home/${{ secrets.EC2_USER }}/.env | xargs > /tmp/.env
-
-            # Check if the .env file was created successfully
-            if [ ! -f /tmp/.env ]; then
-                echo "Failed to create /tmp/.env"
-                exit 1
-            fi
-            
-            # Verify contents of the .env file
-            echo "Contents of /tmp/.env:"
-            cat /tmp/.env
-
             # Pull the latest Docker image from Docker Hub
             echo "Deploying Docker image with version ${{ env.VERSION }}..."
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
@@ -76,9 +62,10 @@ jobs:
             sudo docker stop test_app.dev || true
             sudo docker rm test_app.dev || true
 
-            # Run the new Docker container with the .env file
-            echo "Running Docker container with environment variables..."
-            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file /tmp/.env ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
+            sudo docker run -d -p 3000:3000 --name test_app.dev 
+            --env PORT=${{ secrets.DB_HOST }} \
+            --env DB_PASS=${{ secrets.DB_PASS }} \
+            ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
             echo "Deployment complete."
 
 
