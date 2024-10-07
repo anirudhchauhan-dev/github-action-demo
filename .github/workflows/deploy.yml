@@ -59,15 +59,15 @@ jobs:
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
 
             # Stop and remove any existing container
-            sudo docker stop test_app.dev || true
-            sudo docker rm test_app.dev || true
+            # sudo docker stop test_app.dev || true
+            # sudo docker rm test_app.dev || true
 
-            sudo docker run -d -p 3000:3000 --name test_app.dev 
+            sudo docker run -d -p 3000:3000 \
+            --name test_app.dev \
             --env PORT=${{ secrets.DB_HOST }} \
             --env DB_PASS=${{ secrets.DB_PASS }} \
             ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
             echo "Deployment complete."
-
 
       # Step 7: Rollback in case of failure
       - name: Rollback on failure
