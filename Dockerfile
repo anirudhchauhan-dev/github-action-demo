@@ -1,4 +1,3 @@
-
 # Stage 1: Build the application
 ARG NODE_VERSION=18-alpine
 FROM node:${NODE_VERSION} AS build

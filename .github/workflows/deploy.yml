@@ -1,4 +1,4 @@
-name: Backend Deployment with Docker
+name: Backend Deployment with Docker Compose
 
 on:
   push:
@@ -32,20 +32,22 @@ jobs:
           VERSION=$(jq -r .version package.json)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Step 5: Build, tag, and push Docker image to the registry
+      # Step 5: Build and Push Docker images using Docker Compose
       - name: Build and Push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
-        continue-on-error: true
+        run: |
+          # Build the images
+          docker-compose -f ../docker-compose.yml build
+
+          # Tagging the image with latest and specific version
+          docker tag ${DOCKER_USERNAME}/nestjs-app:latest ${DOCKER_USERNAME}/nestjs-app:${{ env.VERSION }}
+          
+          # Push the images to Docker Hub
+          docker-compose -f ../docker-compose.yml push
+          docker push ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
 
       # Step 6: SSH into EC2 instance and handle deployment
-      - name: SSH and deploy Docker image to EC2
+      - name: SSH and deploy Docker Compose on EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AWS_EC2_IP }}
@@ -54,22 +56,18 @@ jobs:
           script: |
             set -e  # Exit on any failure
 
-            # Pull the latest Docker image from Docker Hub
+            # Pull the latest Docker images from Docker Hub
             echo "Deploying Docker image with version ${{ env.VERSION }}..."
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
+            sudo docker-compose -f ../docker-compose.yml pull
 
-            # Stop and remove any existing container
-            # sudo docker stop test_app.dev || true
-            # sudo docker rm test_app.dev || true
+            # Stop and remove any existing containers
+            sudo docker-compose -f ../docker-compose.yml down || true
 
-            sudo docker run -d -p 3000:3000 \
-            --name test_app.dev \
-            --env PORT=${{ secrets.DB_HOST }} \
-            --env DB_PASS=${{ secrets.DB_PASS }} \
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
+            # Start the application with Docker Compose
+            sudo docker-compose -f ../docker-compose.yml up -d
             echo "Deployment complete."
 
-      # Step 7: Rollback in case of failure
+      # Step 7: Rollback on failure
       - name: Rollback on failure
         if: failure()
         uses: appleboy/ssh-action@master
@@ -79,12 +77,9 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "Deployment failed, rolling back to previous version..."
-            sudo docker stop test_app.dev || true
-            sudo docker rm test_app.dev || true
-
-            # Pull the previous Docker image from Docker Hub
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
-
-            # Run the previous Docker container with the .env file
-            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file /tmp/.env ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
+            sudo docker-compose -f ../docker-compose.yml down || true
+            
+            # Assuming the last working version is tagged as 'latest'
+            sudo docker-compose -f ../docker-compose.yml pull
+            sudo docker-compose -f ../docker-compose.yml up -d
             echo "Rollback complete."
