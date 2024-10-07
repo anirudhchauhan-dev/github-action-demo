@@ -20,3 +20,4 @@ services:
       - .:/app # Mount the current directory to /app inside the container (optional, depending on your use case)
     restart: unless-stopped # Restart policy for the container
 
+    image: ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${VERSION} # Tag with version from GitHub Actions
