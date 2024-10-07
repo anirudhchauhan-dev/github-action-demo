@@ -14,10 +14,6 @@ RUN npm install --force
 # Copy the rest of the application code
 COPY . .
 
-COPY .env .env
-
-RUN ls -la
-
 # Build the Nest.js application
 RUN npm run build
 
@@ -35,17 +31,10 @@ RUN npm install pm2@${PM2_VERSION} -g
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY package*.json ./
-COPY .env .env
-
-RUN ls -la
-
 
 # Expose the port the app runs on
 ARG APP_PORT=3000
 EXPOSE ${APP_PORT}
-
-# Set environment variables
-ENV NODE_ENV=production
 
 # Parameterize the app name and start command
 ARG APP_NAME=test_app.dev

@@ -1,4 +1,4 @@
-name: Backend Deployment with Docker
+name: Backend Deployment with Docker Compose
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Set up Docker Buildx (needed for building Docker images)
+      # Step 2: Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -32,20 +32,15 @@ jobs:
           VERSION=$(jq -r .version package.json)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Step 5: Build, tag, and push Docker image to the registry
+      # Step 5: Build and Push Docker image using Docker Compose
       - name: Build and Push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
-        continue-on-error: true
+        run: |
+          docker-compose build
+          docker tag "${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest" "${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}"
+          docker-compose push
 
-      # Step 6: SSH into EC2 instance and handle deployment
-      - name: SSH and deploy Docker image to EC2
+      # Step 6: SSH into EC2 instance and deploy using Docker Compose
+      - name: SSH and deploy Docker Compose to EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.AWS_EC2_IP }}
@@ -53,21 +48,14 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e  # Exit on any failure
+            
+            # Pull the latest images from Docker Hub
+            docker-compose pull
 
+            # Start the application with Docker Compose
+            docker-compose up -d --remove-orphans
 
-            # Pull the latest Docker image from Docker Hub
-            echo "Deploying Docker image with version ${{ env.VERSION }}..."
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
-
-            # Stop and remove any existing container
-            sudo docker stop test_app.dev || true
-            sudo docker rm test_app.dev || true
-
-            # Run the new Docker container
-            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file .env ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
-            echo "Deployment complete."
-
-      # Step 7: Rollback in case of failure
+      # Step 7: Rollback on failure
       - name: Rollback on failure
         if: failure()
         uses: appleboy/ssh-action@master
@@ -77,12 +65,14 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "Deployment failed, rolling back to previous version..."
-            sudo docker stop test_app.dev || true
-            sudo docker rm test_app.dev || true
+    
+            # Stop and remove the current failed container
+            docker-compose down
 
-            # Pull the previous Docker image from Docker Hub
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
+            # Pull the previous Docker image (tagged as 'latest')
+            docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
 
-            # Redeploy the previous Docker container
-            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file .env ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
+            # Replace the current version with 'latest' and redeploy
+            docker-compose up -d --build --remove-orphans
+
             echo "Rollback complete."
