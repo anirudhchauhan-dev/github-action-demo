@@ -44,7 +44,13 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
         continue-on-error: true
 
-      # Step 6: SSH into EC2 instance and handle deployment
+      # Step 6: Read .env file and set environment variables for SSH
+      - name: Read .env file
+        id: read_env
+        run: |
+          echo "ENV_FILE_CONTENT=$(cat .env | xargs)" >> $GITHUB_ENV
+
+      # Step 7: SSH into EC2 instance and handle deployment
       - name: SSH and deploy Docker image to EC2
         uses: appleboy/ssh-action@master
         with:
@@ -62,11 +68,13 @@ jobs:
             sudo docker stop test_app.dev || true
             sudo docker rm test_app.dev || true
 
-            # Run the new Docker container
-            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file .env ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
+            # Run the new Docker container with environment variables
+            echo "Setting up environment variables..."
+            export $(echo "${{ env.ENV_FILE_CONTENT }}" | xargs)
+            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file <(echo "${{ env.ENV_FILE_CONTENT }}") ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${{ env.VERSION }}
             echo "Deployment complete."
 
-      # Step 7: Rollback in case of failure
+      # Step 8: Rollback in case of failure
       - name: Rollback on failure
         if: failure()
         uses: appleboy/ssh-action@master
@@ -82,6 +90,8 @@ jobs:
             # Pull the previous Docker image from Docker Hub
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
 
-            # Redeploy the previous Docker container
-            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file .env ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
+            # Redeploy the previous Docker container with environment variables
+            echo "Setting up environment variables..."
+            export $(echo "${{ env.ENV_FILE_CONTENT }}" | xargs)
+            sudo docker run -d -p 3000:3000 --name test_app.dev --env-file <(echo "${{ env.ENV_FILE_CONTENT }}") ${{ secrets.DOCKER_USERNAME }}/nestjs-app:latest
             echo "Rollback complete."
