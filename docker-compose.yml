@@ -1,23 +1,20 @@
-version: '3.8' # Specify the Docker Compose version
+version: '3.8'
 
 services:
-  app: # Service name can be anything; here it's 'app'
+  app:
     build:
-      context: . # Context where the Dockerfile is located
-      dockerfile: Dockerfile # Path to the Dockerfile
+      context: .
+      dockerfile: Dockerfile
       args:
-        NODE_VERSION: 18-alpine # Pass build arguments if needed
-        PM2_VERSION: latest # Pass PM2 version if needed
-        APP_PORT: 3000 # Pass app port as an argument
+        NODE_VERSION: 18-alpine
+        PM2_VERSION: latest
+    image: "${DOCKER_USERNAME}/nestjs-app:${VERSION}" # Tagging by version
     ports:
-      - '3000:3000' # Map the host port to the container port
+      - '3000:3000'
     environment:
-      NODE_ENV: production # Set the environment variable inside the container
-
+      NODE_ENV: production
     env_file:
       - .env
     volumes:
-      - .:/app # Mount the current directory to /app inside the container (optional, depending on your use case)
-    restart: unless-stopped # Restart policy for the container
-
-    image: ${{ secrets.DOCKER_USERNAME }}/nestjs-app:${VERSION} # Tag with version from GitHub Actions
+      - .:/app
+    restart: unless-stopped

@@ -32,15 +32,22 @@ jobs:
           VERSION=$(jq -r .version package.json)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Step 5: Build and Push Docker images using Docker Compose
-      - name: Build and Push Docker image
+      # Step 5: Build and tag Docker image
+      - name: Build, Tag, and Push Docker image
         run: |
-          # Build the images
+          # Build the image
+          DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          VERSION=${{ env.VERSION }}
           docker compose -f ./docker-compose.yml build
 
+          # Tag the image with both 'latest' and specific version
+          docker tag $DOCKER_USERNAME/nestjs-app:$VERSION $DOCKER_USERNAME/nestjs-app:latest
+
           # Push the images to Docker Hub
-          docker compose -f ./docker-compose.yml push
-      # Step 6: SSH into EC2 instance and handle deployment
+          docker push $DOCKER_USERNAME/nestjs-app:$VERSION
+          docker push $DOCKER_USERNAME/nestjs-app:latest
+
+      # Step 6: SSH into EC2 instance and deploy with Docker Compose
       - name: SSH and deploy Docker Compose on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -72,7 +79,7 @@ jobs:
           script: |
             echo "Deployment failed, rolling back to previous version..."
             sudo docker compose -f ./docker-compose.yml down || true
-            
+
             # Assuming the last working version is tagged as 'latest'
             sudo docker compose -f ./docker-compose.yml pull
             sudo docker compose -f ./docker-compose.yml up -d
