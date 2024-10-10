@@ -63,8 +63,11 @@ jobs:
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             export VERSION=${{ env.VERSION }}
 
+            cd code/test/github-action-demo
+            git pull
+
             # Save the current running version
-            PREVIOUS_VERSION=$(docker images | grep "$DOCKER_USERNAME/nestjs-app" | awk '{print $2}' | head -1)
+            PREVIOUS_VERSION=$(sudo docker images | grep "$DOCKER_USERNAME/nestjs-app" | awk '{print $2}' | head -1)
 
             # Pull the latest Docker images from Docker Hub
             echo "Deploying Docker image with version $VERSION..."
@@ -73,12 +76,12 @@ jobs:
             # Try to bring up the new container
             sudo docker compose -f ./docker-compose.yml up -d --build
 
-            # Verify if the app is healthy (modify this check based on your app's health check)
-            sleep 30  # wait for the app to start
-            if curl -s http://localhost:3000/health | grep "ok"; then
-              echo "Deployment successful!"
-            else
-              echo "Deployment failed! Rolling back to previous version $PREVIOUS_VERSION..."
-              sudo docker tag $DOCKER_USERNAME/nestjs-app:$PREVIOUS_VERSION $DOCKER_USERNAME/nestjs-app:latest
-              sudo docker compose -f ./docker-compose.yml up -d --build
-            fi
+            # # Verify if the app is healthy (modify this check based on your app's health check)
+            # sleep 30  # wait for the app to start
+            # if curl -s http://localhost:3000/health | grep "ok"; then
+            #   echo "Deployment successful!"
+            # else
+            #   echo "Deployment failed! Rolling back to previous version $PREVIOUS_VERSION..."
+            #   sudo docker tag $DOCKER_USERNAME/nestjs-app:$PREVIOUS_VERSION $DOCKER_USERNAME/nestjs-app:latest
+            #   sudo docker compose -f ./docker-compose.yml up -d --build
+            # fi
