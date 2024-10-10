@@ -8,7 +8,8 @@ services:
       args:
         NODE_VERSION: 18-alpine
         PM2_VERSION: latest
-    image: "${DOCKER_USERNAME}/nestjs-app:${VERSION}" # Tagged by version
+        VERSION: ${VERSION}
+    image: '${DOCKER_USERNAME}/nestjs-app:${VERSION}' # Tagged by version
     ports:
       - '3000:3000'
     environment:

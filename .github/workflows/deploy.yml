@@ -39,8 +39,8 @@ jobs:
           export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           export VERSION=${{ env.VERSION }}
 
-          # Build the image with Docker Compose
-          docker compose -f ./docker-compose.yml build
+          # Build the image with Docker Compose and pass the version as a build argument
+          docker compose -f ./docker-compose.yml build --build-arg VERSION=${VERSION}
 
           # Explicitly tag the image as 'latest' and with the version
           docker tag $DOCKER_USERNAME/nestjs-app:$VERSION $DOCKER_USERNAME/nestjs-app:latest
