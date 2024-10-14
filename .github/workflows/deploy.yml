@@ -74,6 +74,9 @@ jobs:
             echo "Deploying Docker image with version $VERSION..."
             sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml pull
 
+            # Clean extra images
+            sudo docker image prune -f
+
             # Try to bring up the new container
             sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml up -d --build
 
