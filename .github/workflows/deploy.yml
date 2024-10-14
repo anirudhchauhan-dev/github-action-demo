@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-22.04
+    timeout-minutes: 10
 
     steps:
       # Step 1: Checkout code from GitHub repository
@@ -40,7 +41,7 @@ jobs:
           export VERSION=${{ env.VERSION }}
 
           # Build the image with Docker Compose and pass the version as a build argument
-          docker compose -f ./docker-compose.yml build --build-arg VERSION=${VERSION}
+          docker compose -f ./docker-compose.yml build --no-cache --build-arg VERSION=${VERSION}
 
           # Explicitly tag the image as 'latest' and with the version
           docker tag $DOCKER_USERNAME/nestjs-app:$VERSION $DOCKER_USERNAME/nestjs-app:latest
