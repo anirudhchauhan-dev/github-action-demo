@@ -24,10 +24,6 @@ FROM node:${NODE_VERSION}
 # Set working directory inside the container
 WORKDIR /app
 
-# Install PM2 globally
-ARG PM2_VERSION=latest
-RUN yarn install pm2@${PM2_VERSION} 
-
 # Copy the built application from the build stage
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
