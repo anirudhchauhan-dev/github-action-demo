@@ -10,13 +10,13 @@ WORKDIR ${WORKDIR}
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --force
+RUN yarn install
 
 # Copy the rest of the application code
 COPY . .
 
 # Build the Nest.js application
-RUN npm run build
+RUN yarn build
 
 # Stage 2: Production image
 FROM node:${NODE_VERSION}
@@ -26,7 +26,7 @@ WORKDIR /app
 
 # Install PM2 globally
 ARG PM2_VERSION=latest
-RUN npm install pm2@${PM2_VERSION} -g
+RUN yarn install pm2@${PM2_VERSION} 
 
 # Copy the built application from the build stage
 COPY --from=build /app/dist ./dist
@@ -49,4 +49,5 @@ ARG APP_NAME=test_app.dev
 ENV APP_NAME=${APP_NAME}
 
 # Start the application with PM2
-CMD ["pm2-runtime", "start", "npm", "--name", "${APP_NAME}", "--", "run", "start:prod"]
+# CMD ["pm2-runtime", "start", "npm", "--name", "${APP_NAME}", "--", "run", "start:prod"]
+CMD ["pm2-runtime", "start", "yarn", "--name", "${APP_NAME}", "--", "start:prod"]
