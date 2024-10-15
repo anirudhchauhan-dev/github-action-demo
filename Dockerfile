@@ -1,5 +1,5 @@
 # Stage 1: Build the application with Bun
-FROM oven/bun:latest AS build  # Ensure correct casing
+FROM oven/bun:latest AS build  # Use the latest Bun image for the build stage
 
 # Set working directory inside the container
 WORKDIR /app
@@ -13,16 +13,20 @@ RUN bun install
 # Copy the rest of the application code
 COPY . .
 
-# Build the Nest.js application (or your app's build process)
+# Build the Nest.js application
 RUN bun run build
 
-# Stage 2: Production image using Node.js
-FROM node:18-alpine  # Ensure this has one argument (correct image version)
+# Stage 2: Production image using Node.js with PM2 and Bun
+FROM node:18-alpine  # Use Alpine Node.js for production to keep it lightweight
+
+# Install PM2 globally in the production stage
+RUN npm install -g pm2
+
+# Install Bun in the production image
+RUN npm install -g bun
 
 # Set working directory inside the container
 WORKDIR /app
-
-# Install PM2 globally in the production stage
 
 # Copy the built application from the build stage
 COPY --from=build /app/dist ./dist
@@ -34,10 +38,13 @@ ARG APP_PORT=3000
 ENV PORT=${APP_PORT}
 EXPOSE ${PORT}
 
-# Environment variables for the app
+# Set environment variables for production
 ENV NODE_ENV=production
 
-# Start the application with PM2 and Node.js
+# Optional: Copy .env file if necessary (uncomment if needed)
+# COPY .env ./
+
+# Define the application name (can be passed as a build argument)
 ARG APP_NAME=test_app.dev
 ENV APP_NAME=${APP_NAME}
 
