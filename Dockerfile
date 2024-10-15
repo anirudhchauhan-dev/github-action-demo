@@ -10,9 +10,9 @@ WORKDIR ${WORKDIR}
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# RUN curl -fsSL https://bun.sh/install | bash
+RUN curl -fsSL https://bun.sh/install | bash
 
-# RUN ~/.bun/bin/bun install
+RUN ~/.bun/bin/bun install
 
 # Install dependencies
 RUN bun install --frozen-lockfile
