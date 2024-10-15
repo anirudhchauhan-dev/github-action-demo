@@ -1,3 +1,5 @@
+ARG NODE_VERSION=18-alpine
+
 # Stage 1: Build the application with Bun
 FROM oven/bun AS build
 
@@ -17,7 +19,7 @@ COPY . .
 RUN bun run build
 
 # Stage 2: Production image using Node.js with PM2 and Bun
-FROM node:18-alpine  # Use Alpine Node.js for production to keep it lightweight
+FROM node:${NODE_VERSION} # Use Alpine Node.js for production to keep it lightweight
 
 # Install PM2 globally in the production stage
 RUN npm install -g pm2
