@@ -1,6 +1,8 @@
 # Stage 1: Build the application
 ARG NODE_VERSION=18-alpine
 FROM node:${NODE_VERSION} AS build
+FROM oven/bun:latest AS base
+
 
 ARG WORKDIR=/app
 WORKDIR ${WORKDIR}
@@ -8,7 +10,9 @@ WORKDIR ${WORKDIR}
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-RUN npm i -g bun
+# RUN curl -fsSL https://bun.sh/install | bash
+
+# RUN ~/.bun/bin/bun install
 
 # Install dependencies
 RUN bun install --frozen-lockfile
