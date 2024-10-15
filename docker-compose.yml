@@ -6,25 +6,23 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NODE_VERSION: 18-alpine
-        PM2_VERSION: latest
-        VERSION: ${VERSION}
-    image: '${DOCKER_USERNAME}/nestjs-app:${VERSION}' # Tagged by version
+        NODE_VERSION: 18-alpine  # Node version for production stage (if using Node.js in production)
+        VERSION: ${VERSION}      # Build version from your GitHub Actions or environment
+    image: '${DOCKER_USERNAME}/nestjs-app:${VERSION}'  # Tagged by version
     ports:
-      - '3000:3000'
+      - '3000:3000'  # Exposing port 3000 for Nest.js
     environment:
       NODE_ENV: production
     env_file:
-      - .env
+      - .env  # Load environment variables from .env file
     volumes:
       # Only mount volumes in development mode
       - .:/app:rw
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-    
+    # Optional: Healthcheck
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 30s
