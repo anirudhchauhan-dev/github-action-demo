@@ -19,7 +19,7 @@ COPY . .
 RUN bun run build
 
 # Stage 2: Production image using Node.js with PM2 and Bun
-FROM node:${NODE_VERSION} # Use Alpine Node.js for production to keep it lightweight
+FROM node:${NODE_VERSION}
 
 # Install PM2 globally in the production stage
 RUN npm install -g pm2
