@@ -1,5 +1,5 @@
 # Stage 1: Build the application with Bun
-FROM oven/bun:latest AS build  # Use the latest Bun image for the build stage
+FROM oven/bun AS build
 
 # Set working directory inside the container
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json bun.lockb ./
 
 # Install dependencies using Bun
-RUN bun install
+RUN bun install --frozen-lockfile
 
 # Copy the rest of the application code
 COPY . .
