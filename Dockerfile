@@ -1,27 +1,23 @@
-# Stage 1: Build the application
-ARG NODE_VERSION=18-alpine
-FROM node:${NODE_VERSION} AS build
+# Stage 1: Build the application with Bun
+FROM oven/bun:latest as build
 
 # Set working directory inside the container
-ARG WORKDIR=/app
-WORKDIR ${WORKDIR}
+WORKDIR /app
 
-# Copy package.json and package-lock.json to leverage Docker layer caching
-COPY package*.json ./
+# Copy package.json and bun.lockb (if available) to leverage Docker layer caching
+COPY package.json bun.lockb ./
 
-RUN docker pull oven/bun
-RUN docker run --rm --init --ulimit memlock=-1:-1 oven/bun
-
-# Install dependencies
+# Install dependencies using Bun
 RUN bun install
 
 # Copy the rest of the application code
 COPY . .
 
-# Build the Nest.js application
+# Build the Nest.js application (or your app's build process)
 RUN bun run build
 
-# Stage 2: Production image
+# Stage 2: Production image using Node.js
+ARG NODE_VERSION=18-alpine
 FROM node:${NODE_VERSION}
 
 # Set working directory inside the container
@@ -30,7 +26,7 @@ WORKDIR /app
 # Copy the built application from the build stage
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
-COPY package*.json ./
+COPY package.json ./
 
 # Expose the application port (default to 3000 if not provided)
 ARG APP_PORT=3000
@@ -40,12 +36,12 @@ EXPOSE ${PORT}
 # Environment variables for the app
 ENV NODE_ENV=production
 
-# Optional: Copy .env file if necessary (uncomment if needed)
+# Optional: Copy .env file if necessary
 # COPY .env ./
 
 # Run the application with PM2 using environment variable for app name
 ARG APP_NAME=test_app.dev
 ENV APP_NAME=${APP_NAME}
 
-# Start the application with PM2
+# Start the application with PM2 and Bun
 CMD ["pm2-runtime", "start", "bun", "--name", "${APP_NAME}", "--", "run", "start:prod"]
