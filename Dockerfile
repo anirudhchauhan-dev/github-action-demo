@@ -4,7 +4,7 @@ FROM oven/bun:latest as build
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy package.json and bun.lockb (if available) to leverage Docker layer caching
+# Copy package.json and bun.lockb to leverage Docker layer caching
 COPY package.json bun.lockb ./
 
 # Install dependencies using Bun
@@ -17,8 +17,7 @@ COPY . .
 RUN bun run build
 
 # Stage 2: Production image using Node.js
-ARG NODE_VERSION=18-alpine
-FROM node:${NODE_VERSION}
+FROM node:18-alpine  # Use the ARG in the FROM statement
 
 # Set working directory inside the container
 WORKDIR /app
@@ -36,12 +35,8 @@ EXPOSE ${PORT}
 # Environment variables for the app
 ENV NODE_ENV=production
 
-# Optional: Copy .env file if necessary
-# COPY .env ./
-
-# Run the application with PM2 using environment variable for app name
+# Start the application with PM2 and Bun
 ARG APP_NAME=test_app.dev
 ENV APP_NAME=${APP_NAME}
 
-# Start the application with PM2 and Bun
 CMD ["pm2-runtime", "start", "bun", "--name", "${APP_NAME}", "--", "run", "start:prod"]
