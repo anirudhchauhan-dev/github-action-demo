@@ -1,34 +1,30 @@
 # Stage 1: Build the application
-ARG NODE_VERSION=18-alpine
-FROM node:${NODE_VERSION} AS build
-FROM oven/bun:latest AS base
+FROM oven/bun:latest AS build
 
-
+# Set working directory
 ARG WORKDIR=/app
 WORKDIR ${WORKDIR}
 
-# Copy package.json and package-lock.json
+# Copy package.json and bun.lockb (if available)
 COPY package*.json ./
+COPY bun.lockb ./
 
-RUN curl -fsSL https://bun.sh/install | bash
-
-RUN ~/.bun/bin/bun install
-
-# Install dependencies
+# Install dependencies using Bun
 RUN bun install --frozen-lockfile
 
 # Copy the rest of the application code
 COPY . .
 
-# Build the Nest.js application
-RUN npm run build
+# Build the Nest.js application using Bun
+RUN bun run build
 
 # Stage 2: Production image
-FROM node:${NODE_VERSION}
+FROM node:18-alpine AS production
 
+# Set working directory
 WORKDIR /app
 
-# Install PM2 globally
+# Install PM2 globally to manage your application
 ARG PM2_VERSION=latest
 RUN npm install pm2@${PM2_VERSION} -g
 
@@ -41,8 +37,9 @@ COPY package*.json ./
 ARG APP_PORT=3000
 EXPOSE ${APP_PORT}
 
-# Set environment variables from the .env file
+# Set environment variables
 ENV NODE_ENV=production
 
+# Set the app name for PM2 and start the application using PM2
 ARG APP_NAME=test_app.dev
-CMD ["pm2-runtime", "start", "npm", "--name", "${APP_NAME}", "--", "run", "start:prod"]
+CMD ["pm2-runtime", "start", "bun", "--name", "${APP_NAME}", "--", "run", "start:prod"]
