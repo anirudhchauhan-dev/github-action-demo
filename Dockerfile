@@ -9,6 +9,9 @@ WORKDIR ${WORKDIR}
 # Copy package.json and package-lock.json to leverage Docker layer caching
 COPY package*.json ./
 
+RUN docker pull oven/bun
+RUN docker run --rm --init --ulimit memlock=-1:-1 oven/bun
+
 # Install dependencies
 RUN bun install
 
