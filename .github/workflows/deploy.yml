@@ -111,15 +111,17 @@ jobs:
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             export VERSION=${{ env.VERSION }}
 
+            cd code/test/github-action-demo
+
             # Pull the latest Docker images from Docker Hub
             echo "Deploying Docker image with version $VERSION..."
-            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f code/test/github-action-demo/docker-compose.yml pull
+            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml pull
 
             # Clean up old images
             sudo docker image prune -f
 
             # Start the new container with the updated image
-            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f code/test/github-action-demo/docker-compose.yml up -d --build
+            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml up -d --build
 
             # Verify if the app is healthy (modify this check based on your app's health check)
             sleep 30  # wait for the app to start
