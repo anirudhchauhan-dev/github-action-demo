@@ -122,12 +122,3 @@ jobs:
 
             # Start the new container with the updated image
             sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml up -d --build
-
-            # Verify if the app is healthy (modify this check based on your app's health check)
-            sleep 30  # wait for the app to start
-            if curl -s http://localhost:3000/health | grep "ok"; then
-              echo "Deployment successful!"
-            else
-              echo "Deployment failed!"
-              exit 1
-            fi

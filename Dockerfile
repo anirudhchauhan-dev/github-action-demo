@@ -23,5 +23,4 @@ EXPOSE ${APP_PORT}
 ENV NODE_ENV=production
 
 # Set the app name for PM2 and start the application using PM2
-ARG APP_NAME=test_app.dev
-CMD ["pm2-runtime", "start", "npm", "--name", "${APP_NAME}", "--", "run", "start:prod"]
+CMD ["pm2-runtime", "start", "npm", "--name", "test_app.dev", "--", "run", "start:prod"]
