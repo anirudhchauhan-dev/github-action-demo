@@ -122,4 +122,4 @@ jobs:
             sudo docker image prune -f
 
             # Start the new container with the updated image
-            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml up -p --build
+            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml up --build
