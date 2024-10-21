@@ -112,6 +112,7 @@ jobs:
             export VERSION=${{ env.VERSION }}
 
             cd code/test/github-action-demo
+            git pull
 
             # Pull the latest Docker images from Docker Hub
             echo "Deploying Docker image with version $VERSION..."
