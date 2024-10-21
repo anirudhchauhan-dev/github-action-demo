@@ -113,7 +113,8 @@ jobs:
 
             # Pull the latest Docker images from Docker Hub
             echo "Deploying Docker image with version $VERSION..."
-            sudo docker compose -f ./docker-compose.yml pull
+            cd code/test/github-action-demo/
+            sudo docker compose -f code/test/github-action-demo/docker-compose.yml pull
 
             # Clean up old images
             sudo docker image prune -f
