@@ -16,7 +16,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Build the Nest.js application using Bun
-RUN bun run build
+RUN npm run build
 
 # Stage 2: Production image
 FROM node:18-alpine AS production
@@ -42,4 +42,4 @@ ENV NODE_ENV=production
 
 # Set the app name for PM2 and start the application using PM2
 ARG APP_NAME=test_app.dev
-CMD ["pm2-runtime", "start", "bun", "--name", "${APP_NAME}", "--", "run", "start:prod"]
+CMD ["pm2-runtime", "start", "npm", "--name", "${APP_NAME}", "--", "run", "start:prod"]
