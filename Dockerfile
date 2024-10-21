@@ -1,24 +1,4 @@
-# Stage 1: Build the application
-FROM oven/bun:latest AS build
-
-# Set working directory
-ARG WORKDIR=/app
-WORKDIR ${WORKDIR}
-
-# Copy package.json and bun.lockb (if available)
-COPY package*.json ./
-COPY bun.lockb ./
-
-# Install dependencies using Bun
-RUN bun install --frozen-lockfile
-
-# Copy the rest of the application code
-COPY . .
-
-# Build the Nest.js application using Bun
-RUN npm run build
-
-# Stage 2: Production image
+# Stage 1: Production image
 FROM node:18-alpine AS production
 
 # Set working directory
@@ -28,10 +8,12 @@ WORKDIR /app
 ARG PM2_VERSION=latest
 RUN npm install pm2@${PM2_VERSION} -g
 
-# Copy the built application from the build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
+# Copy package.json and node_modules from the build artifacts (from CI)
 COPY package*.json ./
+COPY node_modules ./node_modules
+
+# Copy the pre-built dist folder from the GitHub Actions build artifacts
+COPY dist ./dist
 
 # Expose the port
 ARG APP_PORT=3000

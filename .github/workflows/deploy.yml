@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  # Job 1: Build the NestJS application and package artifacts
+  build:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
 
@@ -15,32 +16,78 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Set up Docker Buildx (needed for building Docker images)
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Build the application
+      - name: Build the application
+        run: npm run build
+
+      # Step 5: Archive the build artifacts
+      - name: Archive production build
+        run: tar -czf build.tar.gz dist node_modules
+
+      # Step 6: Upload build artifacts for the deploy step
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nestjs-build
+          path: build.tar.gz
+
+  # Job 2: Deploy using Docker Compose on EC2
+  deploy:
+    needs: build # Wait until the build job finishes
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      # Step 1: Checkout code from GitHub repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Download build artifacts from the build job
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: nestjs-build
+
+      # Step 3: Extract the build artifacts
+      - name: Extract build artifacts
+        run: tar -xzf build.tar.gz
+
+      # Step 4: Set up Docker Buildx (needed for building Docker images)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Step 3: Log in to Docker Hub
+      # Step 5: Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Step 4: Get version from package.json
+      # Step 6: Get version from package.json
       - name: Get version from package.json
         id: version_info
         run: |
           VERSION=$(jq -r .version package.json)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Step 5: Build, tag, and push Docker images using Docker Compose
+      # Step 7: Build, tag, and push Docker images using Docker Compose
       - name: Build, Tag, and Push Docker image
         run: |
           # Define environment variables
           export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           export VERSION=${{ env.VERSION }}
 
-          # Build the image with Docker Compose and pass the version as a build argument
+          # Build the image using the extracted build artifacts and pass the version as a build argument
           docker compose -f ./docker-compose.yml build --no-cache --build-arg VERSION=${VERSION}
 
           # Explicitly tag the image as 'latest' and with the version
@@ -50,7 +97,7 @@ jobs:
           docker push $DOCKER_USERNAME/nestjs-app:$VERSION
           docker push $DOCKER_USERNAME/nestjs-app:latest
 
-      # Step 6: SSH into EC2 instance and deploy with Docker Compose
+      # Step 8: SSH into EC2 instance and deploy with Docker Compose
       - name: SSH and deploy Docker Compose on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -64,28 +111,21 @@ jobs:
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             export VERSION=${{ env.VERSION }}
 
-            cd code/test/github-action-demo
-            git pull
-
-            # Save the current running version
-            PREVIOUS_VERSION=$(sudo docker images | grep "$DOCKER_USERNAME/nestjs-app" | awk '{print $2}' | head -1)
-
             # Pull the latest Docker images from Docker Hub
             echo "Deploying Docker image with version $VERSION..."
-            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml pull
+            sudo docker compose -f ./docker-compose.yml pull
 
-            # Clean extra images
+            # Clean up old images
             sudo docker image prune -f
 
-            # Try to bring up the new container
-            sudo DOCKER_USERNAME=${DOCKER_USERNAME} VERSION=${VERSION} docker compose -f ./docker-compose.yml up -d --build
+            # Start the new container with the updated image
+            sudo docker compose -f ./docker-compose.yml up -d --build
 
             # Verify if the app is healthy (modify this check based on your app's health check)
             sleep 30  # wait for the app to start
             if curl -s http://localhost:3000/health | grep "ok"; then
               echo "Deployment successful!"
             else
-              echo "Deployment failed! Rolling back to previous version $PREVIOUS_VERSION..."
-              sudo docker tag $DOCKER_USERNAME/nestjs-app:$PREVIOUS_VERSION $DOCKER_USERNAME/nestjs-app:latest
-              sudo docker compose -f ./docker-compose.yml up -d --build
+              echo "Deployment failed!"
+              exit 1
             fi
